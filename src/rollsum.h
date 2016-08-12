@@ -22,17 +22,16 @@
 #ifndef _ROLLSUM_H_
 #define _ROLLSUM_H_
 
-/* We should make this something other than zero to improve the
- * checksum algorithm: tridge suggests a prime number. */
-#define ROLLSUM_CHAR_OFFSET 31
+/* Adler32 style initial s1 value to ensure length is encoded in s2. */
+#define ROLLSUM_INIT 1
 
 /* the Rollsum struct type*/
 
 /** \private */
 typedef struct _Rollsum {
     unsigned long count;               /* count of bytes included in sum */
-    unsigned long s1;                  /* s1 part of sum */
-    unsigned long s2;                  /* s2 part of sum */
+    unsigned int s1;                   /* s1 part of sum */
+    unsigned int s2;                   /* s2 part of sum */
 } Rollsum;
 
 void RollsumUpdate(Rollsum *sum,const unsigned char *buf,unsigned int len);
@@ -46,26 +45,27 @@ unsigned long RollsumDigest(Rollsum *sum);
 
 /* macro implementations of simple routines */
 #define RollsumInit(sum) { \
-    (sum)->count=(sum)->s1=(sum)->s2=0; \
+    (sum)->count = (sum)->s2 = 0; \
+    (sum)->s1 = ROLLSUM_INIT; \
 }
 
 #define RollsumRotate(sum,out,in) { \
-    (sum)->s1 += (unsigned char)(in) - (unsigned char)(out); \
-    (sum)->s2 += (sum)->s1 - (sum)->count*((unsigned char)(out)+ROLLSUM_CHAR_OFFSET); \
+    (sum)->s1 += (unsigned int)(in) - (unsigned int)(out); \
+    (sum)->s2 += (sum)->s1 - (sum)->count*(unsigned int)(out) - ROLLSUM_INIT; \
 }
 
 #define RollsumRollin(sum,c) { \
-    (sum)->s1 += ((unsigned char)(c)+ROLLSUM_CHAR_OFFSET); \
+    (sum)->s1 += (unsigned int)(c); \
     (sum)->s2 += (sum)->s1; \
     (sum)->count++; \
 }
 
 #define RollsumRollout(sum,c) { \
-    (sum)->s1 -= ((unsigned char)(c)+ROLLSUM_CHAR_OFFSET); \
-    (sum)->s2 -= (sum)->count*((unsigned char)(c)+ROLLSUM_CHAR_OFFSET); \
+    (sum)->s1 -= (unsigned int)(c); \
+    (sum)->s2 -= (sum)->count*(unsigned int)(c) - ROLLSUM_INIT; \
     (sum)->count--; \
 }
 
-#define RollsumDigest(sum) (((sum)->s2 << 16) | ((sum)->s1 & 0xffff))
+#define RollsumDigest(sum) (((unsigned long)(sum)->s2 << 16) | ((unsigned long)(sum)->s1 & 0xffff))
 
 #endif /* _ROLLSUM_H_ */
