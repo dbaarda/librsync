@@ -21,7 +21,7 @@
  */
 #include "rollsum.h"
 
-#define DO1(buf,i)  {s1 += buf[i]; s2 += s1;}
+#define DO1(buf,i)  {s1 += buf[i]*buf[i]; s2 += s1;}
 #define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
 #define DO4(buf,i)  DO2(buf,i); DO2(buf,i+2);
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
@@ -40,8 +40,9 @@ void RollsumUpdate(Rollsum *sum,const unsigned char *buf,unsigned int len) {
         len -= 16;
     }
     while (len != 0) {
-        s1 += *buf++;
+        s1 += *buf * *buf;
         s2 += s1;
+        buf++;
         len--;
     }
     sum->s1=s1;

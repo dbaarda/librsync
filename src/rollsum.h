@@ -35,37 +35,42 @@ typedef struct _Rollsum {
 } Rollsum;
 
 void RollsumUpdate(Rollsum *sum,const unsigned char *buf,unsigned int len);
-/* The following are implemented as macros.
-void RollsumInit(Rollsum *sum);
-void RollsumRotate(Rollsum *sum,unsigned char out, unsigned char in);
-void RollsumRollin(Rollsum *sum,unsigned char c);
-void RollsumRollout(Rollsum *sum,unsigned char c);
-unsigned long RollsumDigest(Rollsum *sum);
-*/
 
-/* macro implementations of simple routines */
-#define RollsumInit(sum) { \
-    (sum)->count = (sum)->s2 = 0; \
-    (sum)->s1 = ROLLSUM_INIT; \
+/* static inline implementations of simple routines */
+static inline void RollsumInit(Rollsum *sum)
+{
+    sum->count = 0;
+    sum->s1 = ROLLSUM_INIT;
+    sum->s2 = 0;
 }
 
-#define RollsumRotate(sum,out,in) { \
-    (sum)->s1 += (unsigned int)(in) - (unsigned int)(out); \
-    (sum)->s2 += (sum)->s1 - (sum)->count*(unsigned int)(out) - ROLLSUM_INIT; \
+static inline void RollsumRotate(Rollsum *sum, unsigned char out, unsigned char in)
+{
+    unsigned int in2 = in * in;
+    unsigned int out2 = out * out;
+    sum->s1 += in2 - out2;
+    sum->s2 += sum->s1 - sum->count*out2 - ROLLSUM_INIT;
 }
 
-#define RollsumRollin(sum,c) { \
-    (sum)->s1 += (unsigned int)(c); \
-    (sum)->s2 += (sum)->s1; \
-    (sum)->count++; \
+static inline void RollsumRollin(Rollsum *sum, unsigned char c)
+{
+    unsigned int c2 = c * c;
+    sum->s1 += c2;
+    sum->s2 += sum->s1;
+    sum->count++;
 }
 
-#define RollsumRollout(sum,c) { \
-    (sum)->s1 -= (unsigned int)(c); \
-    (sum)->s2 -= (sum)->count*(unsigned int)(c) - ROLLSUM_INIT; \
-    (sum)->count--; \
+static inline void RollsumRollout(Rollsum *sum, unsigned char c)
+{
+    unsigned int c2 = c * c;
+    sum->s1 -= c2;
+    sum->s2 -= sum->count*c2 - ROLLSUM_INIT;
+    sum->count--;
 }
 
-#define RollsumDigest(sum) (((unsigned long)(sum)->s2 << 16) | ((unsigned long)(sum)->s1 & 0xffff))
+static inline unsigned long RollsumDigest(Rollsum *sum)
+{
+     return ((unsigned long)sum->s2 << 16) | ((unsigned long)sum->s1 & 0xffff);
+}
 
 #endif /* _ROLLSUM_H_ */
