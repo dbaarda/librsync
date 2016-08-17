@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#include "rollsum.h"
+#include "rollsum2.h"
 
 #define DO1(buf,i)  {s1 += buf[i]*buf[i]; s2 += s1;}
 #define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
@@ -27,7 +27,7 @@
 #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
 #define DO16(buf)   DO8(buf,0); DO8(buf,8);
 
-void RollsumUpdate(Rollsum *sum, const unsigned char *buf, size_t len) {
+void Rollsum2Update(Rollsum2 *sum, const unsigned char *buf, size_t len) {
     /* ANSI C says no overflow for unsigned. zlib's adler32 goes to extra
     effort to avoid overflow for its mod prime, which we don't have.*/
     size_t n = len;

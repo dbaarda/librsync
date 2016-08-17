@@ -196,21 +196,25 @@ execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkpr
 
 add_executable(isprefix_test
     tests/isprefix_test.c src/isprefix.c)
-    
+
 add_test(NAME isprefix_test COMMAND isprefix_test)
 
 add_executable(rollsum_test
     tests/rollsum_test.c src/rollsum.c)
 add_test(NAME rollsum_test COMMAND rollsum_test)
 
+add_executable(rollsum2_test
+    tests/rollsum2_test.c src/rollsum2.c)
+add_test(NAME rollsum2_test COMMAND rollsum2_test)
+
 # Disable rdiff specific tests
 if (BUILD_RDIFF)
     add_test(NAME rdiff_bad_option
              COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -229,7 +233,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test rollsum2_test)
 
 
 enable_testing()
