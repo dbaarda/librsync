@@ -25,9 +25,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* We should make this something other than zero to improve the
- * checksum algorithm: tridge suggests a prime number. */
-#define ROLLSUM_CHAR_OFFSET 31
+/* Adler32 style initial s1 value to ensure length is encoded in s2. */
+#define ROLLSUM_INIT 1
 
 /* the Rollsum struct type*/
 
@@ -43,26 +42,32 @@ void RollsumUpdate(Rollsum *sum, const unsigned char *buf, size_t len);
 /* static inline implementations of simple routines */
 static inline void RollsumInit(Rollsum *sum)
 {
-    sum->count = sum->s1 = sum->s2 = 0;
+    sum->count = 0;
+    sum->s1 = ROLLSUM_INIT;
+    sum->s2 = 0;
 }
 
 static inline void RollsumRotate(Rollsum *sum, unsigned char out, unsigned char in)
 {
-    sum->s1 += in - out;
-    sum->s2 += sum->s1 - sum->count*(out + ROLLSUM_CHAR_OFFSET);
+    uint_fast16_t in2 = in * in;
+    uint_fast16_t out2 = out * out;
+    sum->s1 += in2 - out2;
+    sum->s2 += sum->s1 - sum->count*out2 - ROLLSUM_INIT;
 }
 
 static inline void RollsumRollin(Rollsum *sum, unsigned char in)
 {
-    sum->s1 += in + ROLLSUM_CHAR_OFFSET;
+    uint_fast16_t in2 = in * in;
+    sum->s1 += in2;
     sum->s2 += sum->s1;
     sum->count++;
 }
 
 static inline void RollsumRollout(Rollsum *sum, unsigned char out)
 {
-    sum->s1 -= out + ROLLSUM_CHAR_OFFSET;
-    sum->s2 -= sum->count*(out + ROLLSUM_CHAR_OFFSET);
+    uint_fast16_t out2 = out * out;
+    sum->s1 -= out2;
+    sum->s2 -= sum->count*out2 - ROLLSUM_INIT;
     sum->count--;
 }
 
