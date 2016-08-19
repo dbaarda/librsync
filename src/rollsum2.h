@@ -32,9 +32,9 @@
 
 /** \private */
 typedef struct _Rollsum2 {
-    size_t count;      /* count of bytes included in sum */
-    uint_fast16_t s1;  /* s1 part of sum */
-    uint_fast16_t s2;  /* s2 part of sum */
+    size_t count;               /* count of bytes included in sum */
+    uint_fast16_t s1;           /* s1 part of sum */
+    uint_fast16_t s2;           /* s2 part of sum */
 } Rollsum2;
 
 void Rollsum2Update(Rollsum2 *sum, const unsigned char *buf, size_t len);
@@ -52,7 +52,7 @@ static inline void Rollsum2Rotate(Rollsum2 *sum, unsigned char out, unsigned cha
     uint_fast16_t in2 = in * in;
     uint_fast16_t out2 = out * out;
     sum->s1 += in2 - out2;
-    sum->s2 += sum->s1 - sum->count*out2 - ROLLSUM2_INIT;
+    sum->s2 += sum->s1 - sum->count * out2 - ROLLSUM2_INIT;
 }
 
 static inline void Rollsum2Rollin(Rollsum2 *sum, unsigned char in)
@@ -67,7 +67,7 @@ static inline void Rollsum2Rollout(Rollsum2 *sum, unsigned char out)
 {
     uint_fast16_t out2 = out * out;
     sum->s1 -= out2;
-    sum->s2 -= sum->count*out2 + ROLLSUM2_INIT;
+    sum->s2 -= sum->count * out2 + ROLLSUM2_INIT;
     sum->count--;
 }
 
@@ -76,4 +76,4 @@ static inline uint32_t Rollsum2Digest(Rollsum2 *sum)
     return ((uint32_t)sum->s2 << 16) | ((uint32_t)sum->s1 & 0xffff);
 }
 
-#endif /* _ROLLSUM2_H_ */
+#endif                          /* _ROLLSUM2_H_ */
