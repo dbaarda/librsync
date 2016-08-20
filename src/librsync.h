@@ -84,11 +84,11 @@ typedef enum {
     RS_DELTA_MAGIC          = 0x72730236,
 
     /**
-     * A signature file with MD4 signatures.
+     * A signature file using original rollsum and MD4 hash.
      *
-     * Backward compatible with
-     * librsync < 1.0, but strongly deprecated because it creates a security
-     * vulnerability on files containing partly untrusted data. See
+     * Backward compatible with librsync < 1.0, but strongly
+     * deprecated because it creates a security vulnerability on
+     * files containing partly untrusted data. See
      * <https://github.com/librsync/librsync/issues/5>.
      *
      * The four-byte literal \c "rs\x016".
@@ -98,13 +98,43 @@ typedef enum {
     RS_MD4_SIG_MAGIC        = 0x72730136,
 
     /**
-     * A signature file using the BLAKE2 hash. Supported from librsync 1.0.
+     * A signature file using original rollsum and BLAKE2 hash.
+     *
+     * Supported from librsync 1.0. with much better security than MD4.
      *
      * The four-byte literal \c "rs\x017".
      *
      * \see rs_sig_begin()
      **/
-    RS_BLAKE2_SIG_MAGIC     = 0x72730137
+    RS_BLAKE2_SIG_MAGIC     = 0x72730137,
+
+    /**
+     * A signature file using rollsum2 and MD4 hash.
+     *
+     * Supported from librsync XXX. Uses less secure MD4 with better
+     * hashing rollsum2 for reduced weaksum collisions calculating
+     * deltas. This should be the fastest for files with large diffs.
+     *
+     * The four-byte literal \c "rs\x018".
+     *
+     * \see rs_sig_begin()
+     **/
+    RS_ROLLSUM2_MD4_SIG_MAGIC = 0x72730138,
+
+    /**
+     * A signature file using rollsum2 and BLAKE2 hash.
+     *
+     * Supported from librsync XXX. Uses secure BLAKE2 with better
+     * hashing rollsum2 for reduced weaksum collisions calculating
+     * deltas. This should be the most secure and fast for files with
+     * large diffs.
+     *
+     * The four-byte literal \c "rs\x019".
+     *
+     * \see rs_sig_begin()
+     **/
+    RS_ROLLSUM2_BLAKE2_SIG_MAGIC = 0x72730139
+
 } rs_magic_number;
 
 
