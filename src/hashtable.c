@@ -23,16 +23,49 @@
 #include <stdio.h>
 #include "hashtable.h"
 
+/** Initialize a bucket list element. */
+void bucket_init(bucket_t *b, bucket_t *n, void *e)
+{
+    b->next = n;
+    b->entry = e;
+}
+
+/** Destroy a bucket list element. */
+void bucket_done(bucket_t *b)
+{
+    if (b->next) {
+        bucket_done(b->next);
+        free(b->next);
+#ifndef NDEBUG
+        b->next = NULL;
+#endif                          /* NDEBUG */
+    }
+#ifndef NDEBUG
+    b->entry = NULL;
+#endif                          /* NDEBUG */
+}
+
+/** Add and return an entry to the end of a bucket list. */
+bucket_t *bucket_add(bucket_t *b, void *e)
+{
+    /* Note we add to the end so first added is first found. */
+    if (!b->entry) {
+	b->entry = e;
+    } else if (!b->next) {
+	b = b->next = malloc(sizeof(bucket_t));
+	bucket_init(b, NULL, e);
+    } else {
+	b = bucket_add(b->next, e);
+    }
+    return b;
+}
+
 void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp)
 {
     assert(t != NULL);
-    /* Double size and use next power of 2 larger than 8. */
-    size += size;
-    t->size = 8;
-    while (t->size < size)
-        t->size <<= 1;
+    t->size = size ? size : 1;
     t->count = 0;
-    t->table = calloc(t->size, sizeof(void *));
+    t->table = calloc(t->size, sizeof(bucket_t));
     t->hash = hash;
     t->cmp = cmp;
 }
@@ -40,6 +73,10 @@ void hashtable_init(hashtable_t *t, int size, hash_f hash, cmp_f cmp)
 void hashtable_done(hashtable_t *t)
 {
     assert(t != NULL);
+    int i;
+
+    for (i = 0; i < t->size; i++)
+        bucket_done(&t->table[i]);
     free(t->table);
 #ifndef NDEBUG
     t->size = 0;
@@ -60,38 +97,30 @@ static inline unsigned mix32(unsigned int h)
     return h;
 }
 
-/* Prefix macro for probing table t for key k with index i. */
-#define do_probe(t, k) \
-    unsigned mask = t->size - 1;\
-    unsigned index = mix32(t->hash(k)) & mask;\
-    unsigned i = index, s = 0;\
-    do
-
-/* Suffix macro for do_probe. */
-#define while_probe \
-    while ((i = (i + ++s) & mask) != index)
+static inline bucket_t *hashtable_getb(hashtable_t *t, void *k)
+{
+    return &t->table[mix32(t->hash(k)) & (t->size - 1)];
+}
 
 void *hashtable_add(hashtable_t *t, void *e)
 {
     assert(e != NULL);
-    do_probe(t, e) {
-        if (!t->table[i]) {
-            t->count++;
-            return t->table[i] = e;
-        }
-    } while_probe;
-    return NULL;
+    bucket_t *b = hashtable_getb(t, e);
+
+    t->count++;
+    return bucket_add(b, e)->entry;
 }
 
 void *hashtable_find(hashtable_t *t, void *k)
 {
     assert(k != NULL);
     void *e;
+    bucket_t *b = hashtable_getb(t, k);
 
-    do_probe(t, k) {
-        if (!(e = t->table[i]) || !t->cmp(k, e))
+    do {
+        if (!(e = b->entry) || !t->cmp(k, e))
             return e;
-    } while_probe;
+    } while ((b = b->next));
     return NULL;
 }
 
@@ -100,7 +129,8 @@ void *hashtable_iter(hashtable_iter_t *i, hashtable_t *t)
     assert(i != NULL);
     assert(t != NULL);
     i->htable = t;
-    i->index = 0;
+    i->bucket = &t->table[0];
+    i->index = 1;
     return hashtable_next(i);
 }
 
@@ -109,11 +139,15 @@ void *hashtable_next(hashtable_iter_t *i)
     assert(i->htable != NULL);
     assert(i->index <= i->htable->size);
     hashtable_t *t = i->htable;
+    void *e;
 
-    while (i->index < t->size) {
-        if (t->table[i->index])
-            return t->table[i->index++];
-        i->index++;
+    while (i->bucket) {
+	e = i->bucket->entry;
+	i->bucket = i->bucket->next;
+	if (!i->bucket && i->index < t->size)
+	    i->bucket = &t->table[i->index++];
+	if (e)
+	    return e;
     }
     return NULL;
 }

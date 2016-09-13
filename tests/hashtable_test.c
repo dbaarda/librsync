@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 
     /* Test hashtable_init() */
     hashtable_init(&t, 256, (hash_f)&key_hash, (cmp_f)&match_cmp);
-    assert(t.size == 512);
+    assert(t.size >= 256);
     assert(t.count == 0);
     assert(t.table != NULL);
     assert(t.hash == (hash_f)&key_hash);

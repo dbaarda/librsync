@@ -115,11 +115,18 @@ typedef unsigned (*hash_f) (const void *k);
  *   -1, 0, or 1 if *e is less, equal, or more that *o. */
 typedef int (*cmp_f) (void *k, const void *o);
 
+/** The hashtable bucket list type. */
+typedef struct bucket bucket_t;
+struct bucket {
+    bucket_t *next;
+    void *entry;
+};
+
 /** The hashtable type. */
 typedef struct hashtable {
     int size;                   /* Size of allocated hashtable. */
     int count;                  /* Number of entries in hashtable. */
-    void **table;               /* Table of pointers to entries. */
+    bucket_t *table;            /* Pointer to table of buckets. */
     hash_f hash;                /* Function for hashing entries. */
     cmp_f cmp;                  /* Function for comparing entries. */
 } hashtable_t;
@@ -127,7 +134,8 @@ typedef struct hashtable {
 /** The hashtable iterator type. */
 typedef struct hashtable_iter {
     hashtable_t *htable;        /* The hashtable to iterate over. */
-    int index;                  /* The index to scan from for the next entry. */
+    bucket_t *bucket;           /* The pointer to the next bucket entry to iterate from. */
+    int index;                  /* The index of the next bucket list to iterate through. */
 } hashtable_iter_t;
 
 /** Initialize a hashtable instance.
