@@ -36,6 +36,15 @@ NOT RELEASED YET
 
  * `rdiff -s` option now shows bytes read/written and speed. (gulikoza)
 
+ * Running rdiff should not overwrite existing files (signatures, deltas and
+   new patched files) by default. If the destination file exists, rdiff will
+   now exit with an error. (gulikoza)
+   Add new option -f (--force) to overwrite existing files.
+
+ * Add signature memory preallocation (instead of calling realloc for
+   every sig block). See streaming.md job->estimated_signature_count for
+   usage when using the library. `rdiff` uses this by default if possible.
+
 ## librsync 2.0.0
 
 Released 2015-11-29
