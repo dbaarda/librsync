@@ -38,6 +38,13 @@ if (NOT CMAKE_SYSTEM_NAME)
 	message(FATAL_ERROR "No target OS set")
 endif()
 
+set(DO_RS_TRACE 0)
+option(ENABLE_TRACE "Compile in detailed trace messages" OFF)
+if (ENABLE_TRACE)
+    set(DO_RS_TRACE 1)
+endif (ENABLE_TRACE)
+message(STATUS "DO_RS_TRACE=${DO_RS_TRACE}")
+
 # Add an option to include compression support
 option(ENABLE_COMPRESSION "Whether or not to build with compression support" OFF)
 # TODO: Remove this warning when compression is implemented.
@@ -67,7 +74,6 @@ check_include_files ( zlib.h HAVE_ZLIB_H )
 
 #Temporary configuration
 set ( STDC_HEADERS 1 )
-set ( DO_RS_TRACE 0 )
 set ( HAVE_PROGRAM_INVOCATION_NAME 0)
 
 # Remove compression support if not needed
@@ -198,21 +204,25 @@ execute_process(COMMAND ${PERL_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/src/mkpr
 
 add_executable(isprefix_test
     tests/isprefix_test.c src/isprefix.c)
-    
+
 add_test(NAME isprefix_test COMMAND isprefix_test)
 
 add_executable(rollsum_test
     tests/rollsum_test.c src/rollsum.c)
 add_test(NAME rollsum_test COMMAND rollsum_test)
 
+add_executable(sumset_test
+    tests/sumset_test.c src/sumset.c src/util.c src/trace.c src/hex.c src/checksum.c src/rollsum.c src/mdfour.c src/blake2b-ref.c)
+add_test(NAME sumset_test COMMAND sumset_test)
+
 # Disable rdiff specific tests
 if (BUILD_RDIFF)
     add_test(NAME rdiff_bad_option
              COMMAND rdiff_bad_option.sh ${CMAKE_CURRENT_BINARY_DIR}
              WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Help COMMAND help.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-    
+
     add_test(NAME Mutate COMMAND mutate.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Signature COMMAND signature.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     add_test(NAME Sources COMMAND sources.test ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -231,7 +241,7 @@ else (BUILD_RDIFF)
   set(LAST_TARGET rsync)
 endif (BUILD_RDIFF)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
-add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test)
+add_dependencies(check ${LAST_TARGET} isprefix_test rollsum_test sumset_test)
 
 
 enable_testing()

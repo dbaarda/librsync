@@ -44,7 +44,6 @@
 #include "util.h"
 #include "sumset.h"
 #include "search.h"
-#include "checksum.h"
 
 // maximum load factor of hash table
 #define LOAD_FACTOR_NUM 7
@@ -101,22 +100,10 @@ static unsigned int lookup_entry(const rs_signature_t *sigs, rs_weak_sum_t weak_
             return -1;
         if (sigs->buckets[i].weak_sum != weak_sum)
             continue;
-        if (!has_strong_sum)
-        {
-            if (sigs->magic == RS_BLAKE2_SIG_MAGIC)
-                rs_calc_blake2_sum(inbuf, block_len, &strong_sum);
-            else if (sigs->magic == RS_MD4_SIG_MAGIC)
-                rs_calc_md4_sum(inbuf, block_len, &strong_sum);
-            else
-            {
-                /* Bad input data is checked in rs_delta_begin, so this
-                 * should never be reached. */
-                rs_fatal("Unknown signature algorithm %#x", sigs->magic);
-                return -1;
-            }
+        if (!has_strong_sum) {
+            rs_signature_calc_strong_sum(sigs, inbuf, block_len, &strong_sum);
             has_strong_sum = true;
         }
-
         if (memcmp(strong_sum, sigs->strong_sums[sigs->buckets[i].strong_idx - 1], sigs->strong_sum_len) == 0)
             return sigs->buckets[i].strong_idx - 1;
     }
